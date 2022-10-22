@@ -256,13 +256,16 @@ function get_time() {
 }
 
 function get_score() {
-    var score = 0;
+    var score;
+    var max = 0;
     for (let i = 0; i < 4; i++) {
         for (let j = 0; j < 4; j++) {
-            score += 2 ** map[i][j];
+            if(map[i][j] > max)max = map[i][j];
         }
     }
-    return score / 10;
+    score = (max-1) ** 1.6;
+    score = Math.floor(score);
+    return score ;
 }
 
 

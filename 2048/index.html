@@ -14,7 +14,7 @@
                 for (let j = 0; j < 4; j++) {
                     var cell = mapC[i][j];
                     if (cell.state == 0) continue;
-                    var img = new createjs.Bitmap(list[cell.state])
+                    var img = new createjs.Bitmap(list[cell.state-1])
                     var width = img.image.naturalWidth;
                     console.log(512 / width);
                     img.scaleX = 128 / width;
@@ -70,7 +70,6 @@
                 var img = "img/" + i.toString() + ".jpg";
                 src_list[i] = img;
             }
-            src_list = shuffle(src_list);
             for (let i = 0; i < 32; i++) {
                 var img = new createjs.Bitmap(src_list[i]);
                 stage.addChild(img);
