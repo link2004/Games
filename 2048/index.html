@@ -4,8 +4,8 @@
     <meta charset="utf-8" />
     <script src="https://code.createjs.com/1.0.0/createjs.min.js"></script>
     <script src="main.js"></script>
-    <script src="googleapi.js"></script>
     <script>
+        window.addEventListener("load", init);
 
         function draw(stage, list) {
             //マップ
@@ -54,28 +54,27 @@
         }
 
         function init() {
+            console.log("test");
+            var stage = new createjs.Stage("myCanvas");
             // キーボードを押したタイミングを検知
             window.addEventListener("keydown", handleKeyDown);
-            isRunning = true;
-            var stage = new createjs.Stage("myCanvas");
             // タッチ操作をサポートしているブラウザーならば
             if (createjs.Touch.isSupported() == true) {
                 // タッチ操作を有効にします。
                 createjs.Touch.enable(stage)
             }
-
+           
             //画像を読み込んでimg_listに追加する
             var src_list = [];
-            for (let i = 1; i < 32; i++) {
+            for (let i = 0; i < 32; i++) {
                 var img = "img/" + i.toString() + ".jpg";
                 src_list[i] = img;
             }
             src_list = shuffle(src_list);
-
-            init_map();
-            init_mapC();
-            set_time();
-
+            for (let i = 0; i < 32; i++) {
+                var img = new createjs.Bitmap(src_list[i]);
+                stage.addChild(img);
+            }
             createjs.Ticker.framerate = 60;
             createjs.Ticker.addEventListener('tick', function () {
                 if (!isRunning) return;
@@ -86,6 +85,14 @@
                 if (check_end() && anim_count == 0) stop();
             });
 
+        }
+
+        function start() {
+            isRunning = true;
+            
+            init_map();
+            init_mapC();
+            set_time();
         }
 
         function stop() {
@@ -107,7 +114,7 @@
                 stop();
             }
             else {
-                init();
+                start();
             }
         }
 
