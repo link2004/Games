@@ -1,0 +1,174 @@
+<!doctype html>
+
+<head>
+    <meta charset="utf-8" />
+    <script src="https://code.createjs.com/1.0.0/createjs.min.js"></script>
+    <script src="main.js"></script>
+    <script src="googleapi.js"></script>
+    <script>
+
+        function draw(stage, list) {
+            //マップ
+            let i, j;
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 4; j++) {
+                    var cell = mapC[i][j];
+                    if (cell.state == 0) continue;
+                    var img = new createjs.Bitmap(list[cell.state])
+                    var width = img.image.naturalWidth;
+                    console.log(512 / width);
+                    img.scaleX = 128 / width;
+                    img.scaleY = 128 / width;
+                    img.x = (j + cell.getAnimX()) * 512 / 4;
+                    img.y = (i + cell.getAnimY()) * 512 / 4;
+                    stage.addChild(img);
+                }
+            }
+            //時間
+            document.getElementById("time").innerHTML = "Time:" + get_time();
+            //スコア
+            document.getElementById("score").innerHTML = "Score:" + get_score();
+
+            //ボタン
+            document.getElementById("btn").style.display = "none";
+            //メッセージ
+            document.getElementById("fin").innerHTML = "";
+
+            //バー
+            if (isTimeAttack) document.getElementById("bar").value = get_time() / END_TIME;
+
+
+            stage.update();
+
+
+
+        }
+
+        function shuffle(arrays) {
+            const array = arrays.slice();
+            for (let i = array.length - 1; i >= 0; i--) {
+                const randomIndex = Math.floor(Math.random() * (i + 1));
+                [array[i], array[randomIndex]] = [array[randomIndex], array[i]];
+            }
+            return array;
+        }
+
+        function init() {
+            // キーボードを押したタイミングを検知
+            window.addEventListener("keydown", handleKeyDown);
+            isRunning = true;
+            var stage = new createjs.Stage("myCanvas");
+            // タッチ操作をサポートしているブラウザーならば
+            if (createjs.Touch.isSupported() == true) {
+                // タッチ操作を有効にします。
+                createjs.Touch.enable(stage)
+            }
+
+            //画像を読み込んでimg_listに追加する
+            var src_list = [];
+            for (let i = 1; i < 32; i++) {
+                var img = "img/" + i.toString() + ".jpg";
+                src_list[i] = img;
+            }
+            src_list = shuffle(src_list);
+
+            init_map();
+            init_mapC();
+            set_time();
+
+            createjs.Ticker.framerate = 60;
+            createjs.Ticker.addEventListener('tick', function () {
+                if (!isRunning) return;
+                stage.removeAllChildren();
+                stage.clear();
+                if (isMoving) step_mapC();
+                draw(stage, src_list);
+                if (check_end() && anim_count == 0) stop();
+            });
+
+        }
+
+        function stop() {
+            window.removeEventListener("keydown", handleKeyDown);
+            document.getElementById("btn").innerHTML = "Start";
+            document.getElementById("fin").innerHTML = "終了！！";
+            isRunning = false;
+            set_ranking("test", get_score(), get_time());
+        }
+
+        function handleKeyDown(event) {
+            var keyCode = event.keyCode;
+            slide(keyCode);
+            // console.log(mapC);
+        }
+
+        function pushedButton(event) {
+            if (isRunning) {
+                stop();
+            }
+            else {
+                init();
+            }
+        }
+
+    </script>
+    <style>
+        .container {
+            display: flex;
+        }
+
+        .side {
+            flex: 1;
+            font-size: 30px;
+            text-align: center;
+        }
+
+        .left {
+            text-align: left;
+        }
+
+        #canvas-container {
+            padding: 20px;
+        }
+
+        #background {
+            background-color: darkgray;
+            width: 512px;
+            height: 512px;
+        }
+
+        #btn {
+            width: 300px;
+            height: 100px;
+            margin-top: 50px;
+            font-size: 30px;
+        }
+
+        #bar {
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="side">
+            <button id="btn" onclick="pushedButton();">start</button>
+        </div>
+        <div id="canvas-container">
+            <div id="background">
+                <canvas id="myCanvas" width="512" height="512"></canvas>
+            </div>
+        </div>
+        <div class="side">
+            <div class="left">
+                <p id="time">Time</p>
+                <p id="score">Score</p>
+                <p id="fin"></p>
+            </div>
+        </div>
+    </div>
+    <progress id="bar" value=0 display="none"></progress>
+</body>
+
+</html>
