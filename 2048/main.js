@@ -1,11 +1,26 @@
 const UP = 38, DOWN = 40, RIGHT = 39, LEFT = 37;
 MAX_ANIMCOUNT = 5;
 END_TIME = 30;
+GOAL_LEVEL = 8;
 anim_count = 0;
 isMoving = false;
 isRunning = false;
 isTimeAttack = true;
+isGoal = false;
+startX = 0;
+startY = 0;
+canFlick = true;
 
+
+color = [
+    "darkgray",
+    "aqua",
+    "lawngreen",
+    "yellow",
+    "orange",
+    "red",
+    "black"
+]
 class Cell {
     constructor(state) {
         this.state = state;//マスの数値の状態
@@ -35,7 +50,7 @@ class Cell {
     }
 }
 
-
+//アニメーションの座標
 var mapC = [[], [], [], []];
 
 var map = [
@@ -45,6 +60,7 @@ var map = [
     [0, 0, 0, 0]
 ]
 
+//mapを初期化
 function init_mapC() {
     isMoving = false;
     anim_count = 0;
@@ -55,6 +71,7 @@ function init_mapC() {
     }
 }
 
+//マップを次ヘ進める
 function step_mapC() {
     if (isMoving) {
         anim_count += 1;
@@ -107,12 +124,8 @@ function init_map() {
     while (count < 3) {
         let i = getRandInt(4);
         let j = getRandInt(4);
-        console.log(i, j);
         if (map[i][j] == 0) {
-            if (getRandInt(4) == 0)
-                map[i][j] = 2;
-            else
-                map[i][j] = 1;
+            map[i][j] = 1;
             count++;
         }
     }
@@ -121,7 +134,7 @@ function init_map() {
 function generate(direction) {
     let i,num,count;
 
-    if (getRandInt(3) == 0) num = 2;
+    if (getRandInt(2) == 0 && get_max_cell() > 1) num = 2;
     else num = 1;
     for(let j=0,count=0;j<4 && count < 1;j++){
         i = getRandInt(4);
@@ -248,6 +261,7 @@ function set_time() {
 }
 
 function get_time() {
+    if(!isRunning)return time;
     var time1 = new Date().getTime();
     time = time1 - time0;
     time = Math.floor(time / 10);
@@ -255,15 +269,20 @@ function get_time() {
     return time;
 }
 
-function get_score() {
-    var score;
+function get_max_cell(){
     var max = 0;
     for (let i = 0; i < 4; i++) {
         for (let j = 0; j < 4; j++) {
             if(map[i][j] > max)max = map[i][j];
         }
     }
-    score = (max-1) ** 1.6;
+    return max;
+}
+
+function get_score() {
+    var score;
+    var max = get_max_cell();
+    score = (max-1) ** 2.02;
     score = Math.floor(score);
     return score ;
 }

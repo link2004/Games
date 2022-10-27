@@ -1,6 +1,7 @@
 <!doctype html>
 
 <head>
+    <title>ホストを落とせ！！</title>
     <meta charset="utf-8" />
     <script src="https://code.createjs.com/1.0.0/createjs.min.js"></script>
     <script src="main.js"></script>
@@ -10,34 +11,63 @@
         function draw(stage, list) {
             //マップ
             let i, j;
-            for (let i = 0; i < 4; i++) {
-                for (let j = 0; j < 4; j++) {
-                    var cell = mapC[i][j];
-                    if (cell.state == 0) continue;
-                    var img = new createjs.Bitmap(list[cell.state-1])
-                    var width = img.image.naturalWidth;
-                    console.log(512 / width);
-                    img.scaleX = 128 / width;
-                    img.scaleY = 128 / width;
-                    img.x = (j + cell.getAnimX()) * 512 / 4;
-                    img.y = (i + cell.getAnimY()) * 512 / 4;
-                    stage.addChild(img);
+            display = "none"
+            if (mapC[0][0]) {
+                for (let i = 0; i < 4; i++) {
+                    for (let j = 0; j < 4; j++) {
+                        var cell = mapC[i][j];
+                        if (cell.state == 0) continue;
+                        var img = new createjs.Bitmap(list[cell.state - 1])
+                        var width = img.image.naturalWidth;
+                        img.scaleX = 128 / width;
+                        img.scaleY = 128 / width;
+                        img.x = (j + cell.getAnimX()) * 512 / 4;
+                        img.y = (i + cell.getAnimY()) * 512 / 4;
+                        stage.addChild(img);
+
+                        //枠
+                        // 四角形を作成します
+                        var shape = new createjs.Shape();
+                        shape.graphics.beginStroke(color[cell.state - 1]); // 赤色で描画するように設定
+                        var line = 6;
+                        shape.graphics.setStrokeStyle(line);// 線の幅を指定
+
+                        shape.graphics.drawRect(img.x + (line / 2), img.y + (line / 2), 128 - line, 128 - line); // 長方形を描画
+                        stage.addChild(shape); // 表示リストに追加
+                    }
                 }
             }
-            //時間
-            document.getElementById("time").innerHTML = "Time:" + get_time();
-            //スコア
-            document.getElementById("score").innerHTML = "Score:" + get_score();
+            if (isRunning) {
+                //ガイド
+                for (i = 0; i < GOAL_LEVEL; i++) {
+                    if (get_max_cell() > i) {
+                        document.getElementById("img" + i.toString()).style.display = "inline-block";
+                        document.getElementById("sec" + i.toString()).style.display = "none";
+                    }
+                    else {
+                        document.getElementById("img" + i.toString()).style.display = "none";
+                        document.getElementById("sec" + i.toString()).style.display = "inline-block";
+                    }
 
-            //ボタン
-            document.getElementById("btn").style.display = "none";
-            //メッセージ
-            document.getElementById("fin").innerHTML = "";
 
-            //バー
-            if (isTimeAttack) document.getElementById("bar").value = get_time() / END_TIME;
+                }
+
+                //時間
+                document.getElementById("time").innerHTML = "Time:" + get_time();
+                //スコア
+                document.getElementById("score").innerHTML = "Score:" + get_score();
+
+                //ボタン
+                document.getElementById("btn").style.display = "none";
+                //メッセージ
+                document.getElementById("fin").innerHTML = "";
+                document.getElementById("clear").innerHTML = "";
+                //バー
+                if (isTimeAttack) document.getElementById("bar").value = get_time() / END_TIME;
 
 
+
+            }
             stage.update();
 
 
@@ -53,58 +83,81 @@
             return array;
         }
 
+        function display_big_img(stage, src_list) {
+            var img = new createjs.Bitmap(src_list[GOAL_LEVEL - 1]);
+            console.log(img);
+            var height = img.image.naturalHeight;
+            img.scaleX = 512 / height;
+            img.scaleY = 512 / height;
+            img.x = 0;
+            img.y = 0;
+            stage.addChild(img);
+            stage.update();
+        }
+
         function init() {
-            console.log("test");
             var stage = new createjs.Stage("myCanvas");
             // キーボードを押したタイミングを検知
             window.addEventListener("keydown", handleKeyDown);
+            window.addEventListener('touchstart', flick_start);
+            window.addEventListener('touchmove', flick);
+            window.addEventListener('touchend', flick_end);
             // タッチ操作をサポートしているブラウザーならば
             if (createjs.Touch.isSupported() == true) {
                 // タッチ操作を有効にします。
                 createjs.Touch.enable(stage)
             }
-           
+
             //画像を読み込んでimg_listに追加する
             var src_list = [];
-            for (let i = 0; i < 32; i++) {
+            for (let i = 0; i < GOAL_LEVEL; i++) {
                 var img = "img/" + i.toString() + ".jpg";
                 src_list[i] = img;
             }
-            for (let i = 0; i < 32; i++) {
+            for (let i = 0; i < 11; i++) {
                 var img = new createjs.Bitmap(src_list[i]);
                 stage.addChild(img);
             }
             createjs.Ticker.framerate = 60;
             createjs.Ticker.addEventListener('tick', function () {
-                if (!isRunning) return;
                 stage.removeAllChildren();
                 stage.clear();
                 if (isMoving) step_mapC();
                 draw(stage, src_list);
-                if (check_end() && anim_count == 0) stop();
+                if (check_end() && anim_count == 0) {
+                    document.getElementById("fin").innerHTML = "終了！！";
+                    stop();
+                }
+                if (get_max_cell() == GOAL_LEVEL && anim_count == 0) {
+                    document.getElementById("clear").innerHTML = "クリア！！";
+                    display_big_img(stage, src_list);
+                    stop();
+                }
             });
 
         }
 
         function start() {
             isRunning = true;
-            
+
             init_map();
             init_mapC();
             set_time();
         }
 
         function stop() {
-            window.removeEventListener("keydown", handleKeyDown);
             document.getElementById("btn").innerHTML = "Start";
-            document.getElementById("fin").innerHTML = "終了！！";
             isRunning = false;
-            set_ranking("test", get_score(), get_time());
         }
 
         function handleKeyDown(event) {
             var keyCode = event.keyCode;
-            slide(keyCode);
+            if (!isRunning) {
+                if (keyCode == 32) start();
+            }
+            else {
+                slide(keyCode);
+            }
             // console.log(mapC);
         }
 
@@ -115,6 +168,41 @@
             else {
                 start();
             }
+        }
+
+        function flick_start(event) {
+            event.preventDefault();
+            startX = event.touches[0].pageX;
+            startY = event.touches[0].pageY;
+            console.log("startXis"+startX);
+        }
+        function flick(event) {
+            if(!canFlick)return;
+            event.preventDefault();
+            var endX = event.touches[0].pageX;
+            var endY = event.touches[0].pageY;
+            difX = startX - endX;
+            difY = startY - endY;
+            console.log(difX);
+            if(Math.abs(difX)>100){
+                if(difX>0){
+                    slide(LEFT);
+                }else{
+                    slide(RIGHT);
+                }
+                canFlick = false;
+            }
+            if(Math.abs(difY)>100){
+                if(difX>0){
+                    slide(UP);
+                }else{
+                    slide(DOWN);
+                }
+                canFlick = false;
+            }
+        }
+        function flick_end(event){
+            canFlick = true;
         }
 
     </script>
@@ -138,7 +226,7 @@
         }
 
         #background {
-            background-color: darkgray;
+            background-color: rgba(169, 169, 169, 0.5);
             width: 512px;
             height: 512px;
         }
@@ -153,13 +241,65 @@
         #bar {
             width: 100%;
         }
+
+        h1 {
+            font-size: 40px;
+            margin: 20px 0 0 0;
+            text-align: center;
+            color: white;
+            font-family: serif, "ヒラギノ明朝";
+        }
+
+        body {
+            background-image: url("img/background.jpg");
+            background-size: cover;
+        }
+
+        p {
+            color: white;
+            background-color: rgba(0, 0, 0, 0.5);
+            font-size: 2.5rem;
+        }
+
+        .comment {
+            font-size: 1rem;
+        }
+
+        img {
+            display: none;
+            padding: 4px;
+        }
+
+        .img-wrapper {
+            padding: 20px;
+        }
     </style>
 </head>
 
 <body>
+    <h1>ホストを落とせ！！</h1>
     <div class="container">
         <div class="side">
             <button id="btn" onclick="pushedButton();">start</button>
+            <div class="img-wrapper">
+                <img id="img0" src="img/0.jpg" width="64" height="64">
+                <img id="img1" src="img/1.jpg" width="64" height="64">
+                <img id="img2" src="img/2.jpg" width="64" height="64">
+                <img id="img3" src="img/3.jpg" width="64" height="64">
+                <img id="img4" src="img/4.jpg" width="64" height="64">
+                <img id="img5" src="img/5.jpg" width="64" height="64">
+                <img id="img6" src="img/6.jpg" width="64" height="64">
+                <img id="img7" src="img/7.jpg" width="64" height="64">
+                <img id="sec0" src="img/secret.jpg" width="64" height="64">
+                <img id="sec1" src="img/secret.jpg" width="64" height="64">
+                <img id="sec2" src="img/secret.jpg" width="64" height="64">
+                <img id="sec3" src="img/secret.jpg" width="64" height="64">
+                <img id="sec4" src="img/secret.jpg" width="64" height="64">
+                <img id="sec5" src="img/secret.jpg" width="64" height="64">
+                <img id="sec6" src="img/secret.jpg" width="64" height="64">
+                <img id="sec7" src="img/secret.jpg" width="64" height="64">
+
+            </div>
         </div>
         <div id="canvas-container">
             <div id="background">
@@ -171,6 +311,10 @@
                 <p id="time">Time</p>
                 <p id="score">Score</p>
                 <p id="fin"></p>
+                <p id="clear"></p>
+                <p class="comment">操作：矢印キー[↑→↓←]</p>
+                <p class="comment">スタート：スペースキー</p>
+                <p class="comment">やり直し：F5</p>
             </div>
         </div>
     </div>
